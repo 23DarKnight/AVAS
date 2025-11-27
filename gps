@@ -1,0 +1,100 @@
+#!/usr/bin/python3
+"""
+Programmer: Athrava Bhunje
+Version: 1.3.1
+Description: This service reads the data from the gps connected over serial. This GPS data is added to the database for
+further use by other services and programs like iff etc.
+"""
+
+import math
+import time
+import mysql.connector
+import gps
+
+import configparser
+
+# Load the configuration file
+config = configparser.ConfigParser()
+config.read("/etc/parth/parth.conf")
+
+id = config["host"]["id"]
+
+# Connect to the local gpsd service
+session = gps.gps(mode=gps.WATCH_ENABLE)
+
+
+def get_loc():
+    """
+    This function reads the gps data coming over serial port and then converts it to the decimal degree format.
+    :return:
+    """
+    try:
+        report = session.next()
+
+        # Check the report type
+        if report['class'] == 'TPV':
+            return [float(getattr(report, 'lat', 'n/a')), float(getattr(report, 'lon', 'n/a'))]
+
+    except :
+        return None
+
+
+def convert_to_decimal_degrees(value, direction):
+    """
+    This function converts the coordinates it got into to the standard decimal degrees format.
+    :param value:
+    :param direction:
+    :return:
+    """
+    # Extract degrees and minutes
+    degrees = int(value // 100)
+    minutes = value % 100
+    # Convert to decimal degrees
+    decimal_degrees = degrees + minutes / 60.0
+    # Apply direction
+    if direction in ['S', 'W']:
+        decimal_degrees = -decimal_degrees
+    return round(decimal_degrees, 4)
+
+
+def update_gps_data(coordinates):
+    # Database connection parameters
+    dbname = 'parameters'
+    user = 'gps'
+    password = 'System@68'  # replace with the actual password
+    host = 'localhost'  # replace with the actual host if different
+
+    try:
+        # Connect to the database
+        conn = mysql.connector.connect(
+            database=dbname,
+            user=user,
+            password=password,
+            host=host,
+            auth_plugin='mysql_native_password',
+        )
+
+        # Create a cursor object
+        cur = conn.cursor()
+
+        # Update the GPS data in the database for the row with id = 0 using prepared statements
+        cur.execute("INSERT IGNORE INTO aham VALUES (%s, %s, %s)", (id, coordinates[0], coordinates[1]))
+        cur.execute("UPDATE aham SET latitude = %s, longitude = %s WHERE id = %s", (coordinates[0], coordinates[1], id))
+
+        # Commit the transaction
+        conn.commit()
+
+        # Close the cursor and connection
+        cur.close()
+        conn.close()
+
+    except mysql.connector.Error as e:
+        print(f"An error occurred: {e}")
+
+
+if __name__ == '__main__':
+    while True:
+        gps_data = get_loc()
+        print(gps_data)
+        if gps_data is not None:
+            update_gps_data(gps_data)
