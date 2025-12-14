@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+pip3 install indiagrid --break
+touch /usr/share/parth/routes.pkl
 sudo rm /usr/bin/map
 sudo mv map.py /usr/bin/map
 sudo chmod +x /usr/bin/map
