@@ -1,0 +1,123 @@
+#!/usr/bin/python3
+"""
+Name: Radio Communication
+Programmer: Athrava Bhunje
+Version: 2.0.1
+Description: This program reads through the send queue and sends the data from it over radio. It is also puts all the
+incoming data on the received queue for further processing by the iff and the teamTrack programs. The encryption and
+decryption of the data packets sent over the rf is also handled by this service. It supports two types of encryptions.
+The keys for the same are stored in the data base.
+"""
+
+
+import mysql.connector
+import serial
+import time
+import configparser
+
+# Load the configuration file
+config = configparser.ConfigParser()
+config.read("/etc/parth/parth.conf")
+
+id = config["host"]["id"]
+
+start = time.time()
+
+def update_teams(data):
+    # Database connection parameters
+    dbname = 'parameters'
+    user = 'gps'
+    password = 'System@68'  # replace with the actual password
+    host = 'localhost'  # replace with the actual host if different
+    port = '3306'  # replace with the actual port if different
+
+    try:
+        # Connect to the database
+        conn = mysql.connector.connect(
+            database=dbname,
+            user=user,
+            password=password,
+            host=host,
+            auth_plugin='mysql_native_password',
+        )
+
+        # Create a cursor object
+        tid, lat, lon = data
+        cur = conn.cursor()
+        cur.execute("""INSERT INTO team (id, latitude, longitude) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE latitude = %s, longitude = %s; """, (tid, round(lat,4), round(lon, 4)))
+
+        conn.commit()
+
+        # Close the cursor and connection
+        cur.close()
+        conn.close()
+
+    except mysql.connector.Error as e:
+        print(f"An error occurred: {e}")
+
+
+
+
+# Serial connection (adjust parameters as needed)
+ser = serial.Serial(
+    port='/dev/ttyUSB0',  # Adjust the port to match your device
+    baudrate=9600,
+    bytesize=serial.EIGHTBITS,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+    xonxoff=False,  # Disable software flow control
+    rtscts=False,   # Disable hardware (RTS/CTS) flow control
+    dsrdtr=False,   # Disable DSR/DTR flow control
+    timeout=1
+)
+ser.dtr = False  # Deassert DTR for ser2 (receive)
+ser.rts = False  # Deassert RTS for ser2 (receive)
+
+while True:
+    # MySQL database connection
+    conn = mysql.connector.connect(
+        host="localhost",
+        user="gps",
+        password="System@68",
+        database="parameters",
+        auth_plugin='mysql_native_password',
+    )
+    cursor = conn.cursor()
+
+
+    try:
+        msgs = ser.readline().decode().strip()
+        print(msgs)
+        for msg in msgs.split(";"):
+            if msg != [""]:
+                if msg is not None:
+                    data = msg.split(":")
+                    if data != "":
+                        if data[0] == 'b':
+                            update_teams(data[1:])
+    except:
+        msg = None
+
+    # print(msg)
+
+
+    if time.time()-start >2:
+        try:
+            cursor.execute("SELECT latitude, longitude FROM aham WHERE id=%s", (id,))
+            lat, lon = cursor.fetchall()[0]
+            msg = f"b:{id}:{round(lat, 4)}:{round(lon, 4)};"
+            print("sending:", msg)
+            ser.dtr = True  # Assert DTR for ser1 (transmit)
+            ser.rts = True  # Assert RTS for ser1 (transmit)
+            time.sleep(0.05)
+            ser.write(f"{msg}\n".encode())
+            time.sleep(0.1)
+            ser.dtr = False  # Deassert DTR for ser2 (receive)
+            ser.rts = False  # Deassert RTS for ser2 (receive)
+        except Exception as e:
+            print(e)
+            pass
+        start = time.time()
+
+    cursor.close()
+    conn.close()
