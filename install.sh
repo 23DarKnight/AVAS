@@ -10,4 +10,4 @@ sudo cp radio /usr/bin/radio
 sudo chmod +x /usr/bin/map /usr/bin/radio
 cp routes.pkl /usr/share/parth/routes.pkl
 sudo systemctl daemon-reload
-sudo systemctl restart getty@tty1
+sudo reboot
