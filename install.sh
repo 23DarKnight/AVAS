@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
-sudo rm /usr/bin/gps
-sudo mv gps /usr/bin/gps
-sudo chmod +x /usr/bin/gps
+sudo rm /usr/bin/map
+sudo mv map.py /usr/bin/map
+sudo chmod +x /usr/bin/map
 sudo systemctl daemon-reload
-sudo systemctl status gps
+sudo systemctl restart getty@tty1
