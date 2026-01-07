@@ -1,0 +1,55 @@
+create user iff@localhost identified by 'System@68';
+create user gps@localhost identified by 'System@68';
+create user radio@localhost identified by 'System@68';
+create user paralax@localhost identified by 'System@68';
+
+
+
+FLUSH PRIVILEGES;
+
+create database parameters;
+
+use parameters;
+
+create table aham (id varchar(255) not null primary key, latitude float(7,4), longitude float(7,4));
+create table queens (id varchar(255) not null primary key, latitude float(7,4), longitude float(7,4));
+create table team (id varchar(255) not null primary key, latitude float(7,4), longitude float(7,4));
+
+grant all privileges on parameters.* to iff@localhost;
+grant all privileges on team to iff@localhost;
+grant all privileges on queens to iff@localhost;
+grant all privileges on parameters.* to gps@localhost;
+grant all privileges on parameters to gps@localhost;
+grant all privileges on parameters.* to radio@localhost;
+grant all privileges on team to gps@localhost;
+grant all privileges on parameters.* to paralax@localhost;
+
+
+create database serial;
+
+use serial;
+
+create table sendLst (id text not null unique);
+create table rcvLst (id text not null unique);
+
+grant all privileges on serial.* to iff@localhost;
+grant all privileges on serial.* to gps@localhost;
+grant all privileges on serial.* to radio@localhost;
+
+ALTER USER iff@localhost IDENTIFIED WITH mysql_native_password BY 'System@68';
+ALTER USER gps@localhost IDENTIFIED WITH mysql_native_password BY 'System@68';
+ALTER USER radio@localhost IDENTIFIED WITH mysql_native_password BY 'System@68';
+ALTER USER paralax@localhost IDENTIFIED WITH mysql_native_password BY 'System@68';
+
+ALTER USER iff@localhost IDENTIFIED WITH auth_socket BY 'System@68';
+ALTER USER gps@localhost IDENTIFIED WITH auth_socket BY 'System@68';
+ALTER USER radio@localhost IDENTIFIED WITH auth_socket BY 'System@68';
+ALTER USER paralax@localhost IDENTIFIED WITH auth_socket BY 'System@68';
+
+
+SET PASSWORD FOR 'paralax'@'localhost' = PASSWORD('System@68');
+SET PASSWORD FOR 'gps'@'localhost' = PASSWORD('System@68');
+SET PASSWORD FOR 'radio'@'localhost' = PASSWORD('System@68');
+SET PASSWORD FOR 'iff'@'localhost' = PASSWORD('System@68');
+
+FLUSH PRIVILEGES;
