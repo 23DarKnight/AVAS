@@ -1616,7 +1616,7 @@ class MyApp(QMainWindow):
         popup = PopupWindow()
         popup.dropdown = QComboBox()
         popup.savebtn = QPushButton("Save")
-        popup.dropdown.addItems(["68", "A", "B", "C", "A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4"])
+        popup.dropdown.addItems(["Bhism", "Bhim", "Bhairav", "Agni", "Jwala", "Setu", "A3", "A4", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4"])
         # popup.dropdown.currentIndexChanged.connect(partial(self.nameChange, popup))
         popup.savebtn.clicked.connect(partial(self.nameChange, popup))
         popup.layout.addWidget(popup.dropdown)
